@@ -89,7 +89,8 @@ if __name__ == "__main__":
     logging.info("Processing stops.txt...")
     stops = get_rows(STOPS_FILE)
     for stop in stops:
-        stop["stop_name"] = stop["stop_desc"]
+        if stop["stop_desc"] != "":
+            stop["stop_name"] = stop["stop_desc"]
 
     if stops:
         with open(
