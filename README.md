@@ -1,4 +1,4 @@
-# Generador de GTFS Renfe Galicia
+# Generador de GTFS Transporte Urbano de A Coruña 
 
 Este repositorio contiene un script para mejorar los datos del feed GTFS del transporte urbano de A Coruña, España. El script descarga los datos oficiales del Punto de Acceso Nacional (NAP) de España y aplica pequeñas correcciones-mejoras.
 
