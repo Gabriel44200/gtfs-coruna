@@ -71,6 +71,7 @@ if __name__ == "__main__":
     with zipfile.ZipFile(INPUT_GTFS_ZIP, "r") as zip_ref:
         zip_ref.extractall(INPUT_GTFS_PATH)
 
+    TRIPS_FILE = os.path.join(INPUT_GTFS_PATH, "trips.txt")
     STOPS_FILE = os.path.join(INPUT_GTFS_PATH, "stops.txt")
     ROUTES_FILE = os.path.join(INPUT_GTFS_PATH, "routes.txt")
 
@@ -85,12 +86,58 @@ if __name__ == "__main__":
         dest_path = os.path.join(OUTPUT_GTFS_PATH, filename)
         shutil.copy(src_path, dest_path)
 
+    # Process trips.txt
+    logging.info("Processing trips.txt...")
+    with open(
+        os.path.join(os.path.dirname(__file__), "trip_byshape_overrides.json"),
+        "r",
+        encoding="utf-8",
+    ) as f:
+        trip_byshape_overrides_list = json.load(f)
+        trip_byshape_overrides = {item["shape_id"]: item for item in trip_byshape_overrides_list}
+
+    trips = get_rows(TRIPS_FILE)
+    for trip in trips:
+        tsid = trip["shape_id"]
+
+        # Then we apply the overrides (which could update the name too, that's why it's done later)
+        if tsid in trip_byshape_overrides:
+            for key, value in trip_byshape_overrides[tsid].items():
+                trip[key] = value
+
+    if trips:
+        with open(
+            os.path.join(OUTPUT_GTFS_PATH, "trips.txt"),
+            "w",
+            encoding="utf-8",
+            newline="",
+        ) as f:
+            writer = csv.DictWriter(f, fieldnames=trips[0].keys())
+            writer.writeheader()
+            writer.writerows(trips)
+
     # Process stops.txt
     logging.info("Processing stops.txt...")
+    with open(
+        os.path.join(os.path.dirname(__file__), "stop_overrides.json"),
+        "r",
+        encoding="utf-8",
+    ) as f:
+        stop_overrides_list = json.load(f)
+        stop_overrides = {item["stop_id"]: item for item in stop_overrides_list}
+
     stops = get_rows(STOPS_FILE)
     for stop in stops:
+        sid = stop["stop_id"]
+
+        # First we default the stop_name to stop_desc if it's not empty
         if stop["stop_desc"] != "":
             stop["stop_name"] = stop["stop_desc"]
+
+        # Then we apply the overrides (which could update the name too, that's why it's done later)
+        if sid in stop_overrides:
+            for key, value in stop_overrides[sid].items():
+                stop[key] = value
 
     if stops:
         with open(
